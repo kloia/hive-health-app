@@ -1,0 +1,24 @@
+# Build output (the root "hive" binary is a local x86-64 build)
+/hive
+/bin/
+/dist/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Go
+/vendor/
+go.work
+go.work.sum
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
