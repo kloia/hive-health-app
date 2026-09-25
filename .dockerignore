@@ -1,4 +1,9 @@
 hive
 hive.service
 *.md
+*_test.go
 .git
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
