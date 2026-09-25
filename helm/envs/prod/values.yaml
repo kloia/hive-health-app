@@ -10,10 +10,10 @@ image:
   tag: c9000ec   # TODO: pin the release you want in prod
 
 database:
-  host: postgres-prod.example.internal   # TODO: prod database host
+  host: health-hackathon-aurora.cluster-c6fqsyxafffa.eu-west-2.rds.amazonaws.com   # TODO: prod database host
   port: 5432
-  user: hive
-  name: hive
+  user: health_admin
+  name: hivedb
   # Password: Secret "hive-db", key DB_PASSWORD, in the release namespace.
   # Prefer External Secrets / Sealed Secrets over kubectl in prod.
   existingSecret: hive-db
@@ -23,8 +23,6 @@ resources:
   requests:
     cpu: 100m
     memory: 64Mi
-  limits:
-    memory: 256Mi
 
 podDisruptionBudget:
   enabled: true
