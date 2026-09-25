@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>HIVE - Stock</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; }
+header { background: #b00; color: #fff; padding: 12px 24px; }
+header h1 { margin: 0 12px 0 0; font-size: 22px; letter-spacing: 3px; display: inline; }
+main { padding: 24px; }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; text-align: left; }
+th { background: #333; color: #fff; }
+.low { color: #b00; font-weight: bold; }
+</style></head>
+<body>
+<header><h1>HIVE</h1><small>Umbrella Corporation &middot; Warehouse Stock System</small></header>
+<main><table>
+<tr><th>ID</th><th>Product</th><th>Warehouse</th><th>Quantity</th><th>Last Update</th></tr>
+{{range .}}<tr><td>{{.ID}}</td><td>{{.Name}}</td><td>{{.Warehouse}}</td>
+<td{{if lt .Quantity 100}} class="low"{{end}}>{{.Quantity}}</td><td>{{.UpdatedAt.Format "2006-01-02 15:04"}}</td></tr>
+{{end}}</table></main>
+</body></html>

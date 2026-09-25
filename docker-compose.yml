@@ -1,0 +1,27 @@
+# Local development only: Postgres + HIVE with sample data.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive-local
+      POSTGRES_DB: hive
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d hive"]
+      interval: 2s
+      retries: 15
+
+  app:
+    build: .
+    environment:
+      DB_HOST: db
+      DB_PASSWORD: hive-local
+      DB_SSLMODE: disable
+      SEED_SAMPLE_DATA: "true"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy

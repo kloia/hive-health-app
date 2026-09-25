@@ -3,15 +3,17 @@
 
 # HIVE - ARM64 (linux/arm64) image.
 # Build stage runs on the host's native platform and cross-compiles for ARM64
-# (pure Go, lib/pq needs no cgo), so no QEMU emulation is needed for the compile.
-FROM --platform=$BUILDPLATFORM golang:1.23-alpine AS build
+# (pure Go, pgx needs no cgo), so no QEMU emulation is needed for the compile.
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
 
 WORKDIR /src
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY main.go ./
+COPY *.go ./
+COPY migrations/ migrations/
+COPY templates/ templates/
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=arm64 \
     go build -trimpath -ldflags="-s -w" -o /out/hive .
 
