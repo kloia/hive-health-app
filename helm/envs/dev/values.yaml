@@ -1,0 +1,33 @@
+# dev
+# Deploy: make deploy ENV=dev KUBE_CONTEXT=<context> [NAMESPACE=hive-dev]
+
+replicaCount: 1
+
+image:
+  tag: c9000ec   # image pushed from main (git rev-parse --short HEAD)
+
+database:
+  host: postgres-dev.example.internal   # TODO: dev database host
+  port: 5432
+  user: hive
+  name: hive
+  # Password: Secret "hive-db", key DB_PASSWORD, in the release namespace.
+  #   kubectl -n hive-dev create secret generic hive-db --from-literal=DB_PASSWORD='...'
+  existingSecret: hive-db
+  passwordKey: DB_PASSWORD
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+
+ingress:
+  enabled: false
+  # className: nginx
+  # hosts:
+  #   - host: hive.dev.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix

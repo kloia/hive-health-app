@@ -1,0 +1,48 @@
+# prod
+# Deploy: make deploy ENV=prod KUBE_CONTEXT=<context> [NAMESPACE=hive-prod]
+
+# If the prod database is still empty, do the first deploy with
+# HELM_ARGS="--set replicaCount=1": each replica seeds an empty products
+# table, so two replicas starting together can insert the sample data twice.
+replicaCount: 2
+
+image:
+  tag: c9000ec   # TODO: pin the release you want in prod
+
+database:
+  host: postgres-prod.example.internal   # TODO: prod database host
+  port: 5432
+  user: hive
+  name: hive
+  # Password: Secret "hive-db", key DB_PASSWORD, in the release namespace.
+  # Prefer External Secrets / Sealed Secrets over kubectl in prod.
+  existingSecret: hive-db
+  passwordKey: DB_PASSWORD
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 64Mi
+  limits:
+    memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+topologySpread:
+  enabled: true
+
+ingress:
+  enabled: false
+  # className: nginx
+  # annotations:
+  #   cert-manager.io/cluster-issuer: letsencrypt
+  # hosts:
+  #   - host: hive.example.com
+  #     paths:
+  #       - path: /
+  #         pathType: Prefix
+  # tls:
+  #   - secretName: hive-tls
+  #     hosts: [hive.example.com]

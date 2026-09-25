@@ -2,3 +2,5 @@ hive
 hive.service
 *.md
 .git
+helm
+Makefile

@@ -1,0 +1,14 @@
+HIVE {{ .Values.image.tag | default .Chart.AppVersion }} deployed as "{{ .Release.Name }}" in namespace "{{ .Release.Namespace }}".
+
+Check the rollout:
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "hive.fullname" . }}
+
+{{- if .Values.ingress.enabled }}
+URL:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+Local access:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "hive.fullname" . }} 8080:{{ .Values.service.port }}
+{{- end }}

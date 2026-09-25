@@ -1,0 +1,124 @@
+# Defaults shared by every environment. Per-environment overrides live in
+# helm/envs/<env>/values.yaml.
+
+replicaCount: 1
+
+image:
+  repository: 417732881703.dkr.ecr.eu-west-2.amazonaws.com/health-app
+  # Defaults to the chart's appVersion (the commit the image was built from).
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Needed when the cluster cannot pull from ECR on its own (e.g. GKE).
+imagePullSecrets: []
+#  - name: ecr-pull
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+podAnnotations: {}
+podLabels: {}
+
+# Database connection. The app reads these as DB_HOST, DB_PORT, DB_USER,
+# DB_NAME and DB_PASSWORD. The current code always connects with
+# sslmode=disable; TLS to the database is not configurable yet.
+database:
+  host: ""            # required, e.g. postgres.hive-dev.svc.cluster.local
+  port: 5432
+  user: hive
+  name: hive
+
+  # The password is always read from a Kubernetes Secret, never from a plain
+  # env value. Pick ONE of the two options:
+  #
+  # Option A (recommended): a Secret created outside the chart
+  # (kubectl, External Secrets, Sealed Secrets):
+  #   kubectl -n <ns> create secret generic hive-db --from-literal=DB_PASSWORD='...'
+  existingSecret: hive-db
+  passwordKey: DB_PASSWORD
+  #
+  # Option B (throwaway environments only): the chart creates the Secret.
+  # Pass the password on the command line, never commit it:
+  #   make deploy ... HELM_ARGS="--set database.createSecret=true --set-string database.password=..."
+  createSecret: false
+  password: ""
+
+# Extra environment variables, in the Kubernetes env format.
+extraEnv: []
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  #  - host: hive.example.com
+  #    paths:
+  #      - path: /
+  #        pathType: Prefix
+  tls: []
+  #  - secretName: hive-tls
+  #    hosts: [hive.example.com]
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    memory: 128Mi
+
+# Keep off on a fresh database: every replica seeds the products table on
+# first start, so several replicas starting together can seed it twice.
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+
+# Spread replicas across zones and nodes.
+topologySpread:
+  enabled: false
+
+# The app does not drain requests on SIGTERM. Waiting a few seconds before it
+# is stopped lets the Service stop sending it traffic first.
+# Uses the native preStop.sleep hook (Kubernetes 1.30+); 0 disables it.
+preStopSleepSeconds: 5
+terminationGracePeriodSeconds: 30
+
+# The image is built for ARM64 only.
+nodeSelector:
+  kubernetes.io/arch: arm64
+
+# GKE taints ARM nodes with kubernetes.io/arch=arm64:NoSchedule.
+tolerations:
+  - key: kubernetes.io/arch
+    operator: Equal
+    value: arm64
+    effect: NoSchedule
+
+affinity: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  runAsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: [ALL]
