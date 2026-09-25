@@ -11,7 +11,10 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
+
+	instana "github.com/instana/go-sensor"
 )
 
 const (
@@ -27,29 +30,42 @@ type server struct {
 	store  store
 	tmpl   *template.Template
 	logger *slog.Logger
+	tracer instana.TracerLogger // nil when tracing is disabled
 }
 
-func newServer(st store, logger *slog.Logger) *server {
+func newServer(st store, logger *slog.Logger, tracer instana.TracerLogger) *server {
 	return &server{
 		store:  st,
 		tmpl:   template.Must(template.New("index").Parse(indexHTML)),
 		logger: logger,
+		tracer: tracer,
 	}
 }
 
 func (s *server) routes() http.Handler {
 	mux := http.NewServeMux()
+	// Probes are not traced; they would drown the real traffic in Instana.
 	mux.HandleFunc("GET /healthz", s.handleLive)
 	mux.HandleFunc("GET /readyz", s.handleReady)
 	mux.HandleFunc("GET /health", s.handleReady) // kept for existing monitors
-	mux.HandleFunc("GET /api/stock", s.handleListStock)
-	mux.HandleFunc("POST /api/stock", s.handleCreateMovement)
+
+	s.handle(mux, "GET", "/api/stock", s.handleListStock)
+	s.handle(mux, "POST", "/api/stock", s.handleCreateMovement)
 	// mobil uygulama bu endpoint'i kullaniyor, degistirme!
-	mux.HandleFunc("GET /api/stock/{id}", s.handleGetStock)
-	mux.HandleFunc("GET /api/movements", s.handleListMovements)
-	mux.HandleFunc("GET /api/reports", s.handleListReports)
-	mux.HandleFunc("GET /{$}", s.handleIndex)
+	s.handle(mux, "GET", "/api/stock/{id}", s.handleGetStock)
+	s.handle(mux, "GET", "/api/movements", s.handleListMovements)
+	s.handle(mux, "GET", "/api/reports", s.handleListReports)
+	s.handle(mux, "GET", "/{$}", s.handleIndex)
 	return s.logRequests(mux)
+}
+
+// handle registers a route and, when tracing is on, wraps it in an Instana
+// entry span tagged with the route template (e.g. /api/stock/{id}).
+func (s *server) handle(mux *http.ServeMux, method, path string, h http.HandlerFunc) {
+	if s.tracer != nil {
+		h = instana.TracingHandlerFunc(s.tracer, strings.TrimSuffix(path, "{$}"), h)
+	}
+	mux.HandleFunc(method+" "+path, h)
 }
 
 func (s *server) handleLive(w http.ResponseWriter, r *http.Request) {

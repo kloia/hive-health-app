@@ -53,7 +53,7 @@ func (f *fakeStore) ListMovements(context.Context, int) ([]Movement, error) { re
 func (f *fakeStore) ListReports(context.Context, int) ([]Report, error)     { return []Report{}, nil }
 
 func newTestServer(st *fakeStore) http.Handler {
-	return newServer(st, slog.New(slog.NewTextHandler(io.Discard, nil))).routes()
+	return newServer(st, slog.New(slog.NewTextHandler(io.Discard, nil)), nil).routes()
 }
 
 func do(t *testing.T, h http.Handler, method, target, body string) *httptest.ResponseRecorder {

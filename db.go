@@ -11,7 +11,8 @@ import (
 	"slices"
 	"time"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
+	instana "github.com/instana/go-sensor"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 //go:embed migrations/*.sql
@@ -20,8 +21,13 @@ var migrationFiles embed.FS
 // Shared by every replica so that only one of them migrates or seeds at a time.
 const migrationLockKey = 72417001
 
-func openDB(ctx context.Context, cfg config, logger *slog.Logger) (*sql.DB, error) {
-	db, err := sql.Open("pgx", cfg.DatabaseURL)
+func openDB(ctx context.Context, cfg config, tracer instana.TracerLogger, logger *slog.Logger) (*sql.DB, error) {
+	driverName := "pgx"
+	if tracer != nil {
+		instana.InstrumentSQLDriver(tracer, driverName, stdlib.GetDefaultDriver())
+		driverName += "_with_instana"
+	}
+	db, err := sql.Open(driverName, cfg.DatabaseURL)
 	if err != nil {
 		return nil, err
 	}

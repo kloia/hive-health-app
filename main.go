@@ -44,7 +44,14 @@ func run(args []string, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	db, err := openDB(ctx, cfg, logger)
+	tracer := initTracing(cfg, logger)
+	defer func() {
+		flushCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		shutdownTracing(flushCtx, tracer, logger)
+	}()
+
+	db, err := openDB(ctx, cfg, tracer, logger)
 	if err != nil {
 		return err
 	}
@@ -59,7 +66,7 @@ func run(args []string, logger *slog.Logger) error {
 			return err
 		}
 	}
-	return serve(ctx, cfg, newServer(&pgStore{db: db}, logger), logger)
+	return serve(ctx, cfg, newServer(&pgStore{db: db}, logger, tracer), logger)
 }
 
 // serve runs the HTTP server until ctx is cancelled (SIGTERM/SIGINT), then

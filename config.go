@@ -19,6 +19,7 @@ type config struct {
 	DBConnMaxLifetime time.Duration
 	DBConnectTimeout  time.Duration
 	ShutdownTimeout   time.Duration
+	InstanaEnabled    bool
 }
 
 // loadConfig reads the configuration from the environment. The database is
@@ -35,6 +36,7 @@ func loadConfig(getenv func(string) string) (config, error) {
 		DBConnMaxLifetime: p.duration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
 		DBConnectTimeout:  p.duration("DB_CONNECT_TIMEOUT", 30*time.Second),
 		ShutdownTimeout:   p.duration("SHUTDOWN_TIMEOUT", 15*time.Second),
+		InstanaEnabled:    p.bool("INSTANA_ENABLED", false),
 	}
 	cfg.DatabaseURL = p.databaseURL()
 	return cfg, errors.Join(p.errs...)

@@ -34,6 +34,32 @@ Postgres advisory lock, so several replicas can start at the same time safely.
 | `AUTO_MIGRATE` | `true` | |
 | `SEED_SAMPLE_DATA` | `false` | Inserts sample products only when the table is empty. |
 | `SHUTDOWN_TIMEOUT` | `15s` | Time to drain requests after SIGTERM. |
+| `INSTANA_ENABLED` | `false` | Sends traces to the Instana host agent. |
+| `INSTANA_AGENT_HOST` / `INSTANA_AGENT_PORT` | `localhost` / `42699` | Read by the Instana sensor. |
+| `INSTANA_SERVICE_NAME` | `hive` | Service name shown in Instana. |
+
+## Tracing (Instana)
+
+With `INSTANA_ENABLED=true` the service uses the Instana Go sensor (`github.com/instana/go-sensor`):
+
+- every API route and the HTML page produce an HTTP entry span tagged with its route template (`/api/stock/{id}`);
+- every database query produces a PostgreSQL exit span under the request that ran it;
+- health probes are not traced;
+- buffered spans are flushed on shutdown.
+
+If the agent cannot be reached the service keeps working and only the traces are lost.
+
+In Kubernetes the Instana agent runs as a DaemonSet, so point the sensor at the node's IP:
+
+```yaml
+env:
+  - name: INSTANA_ENABLED
+    value: "true"
+  - name: INSTANA_AGENT_HOST
+    valueFrom:
+      fieldRef:
+        fieldPath: status.hostIP
+```
 
 ## Endpoints
 
